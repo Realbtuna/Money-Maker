@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Light Board Beta</title>
+<style>
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: #111827;
+    color: white;
+    margin: 0;
+    padding: 20px;
+  }
+  .app {
+    max-width: 430px;
+    margin: auto;
+    background: #1f2937;
+    border-radius: 24px;
+    padding: 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,.35);
+  }
+  h1 {
+    font-size: 26px;
+    margin: 0 0 6px;
+  }
+  .sub {
+    color: #9ca3af;
+    margin-bottom: 18px;
+  }
+  input {
+    width: 100%;
+    font-size: 24px;
+    padding: 14px;
+    border-radius: 14px;
+    border: none;
+    box-sizing: border-box;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+  button {
+    width: 100%;
+    font-size: 22px;
+    padding: 14px;
+    border-radius: 14px;
+    border: none;
+    font-weight: 800;
+    background: #2563eb;
+    color: white;
+    margin-bottom: 20px;
+  }
+  .ticker {
+    font-size: 28px;
+    font-weight: 900;
+    margin-bottom: 12px;
+  }
+  .lights {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-bottom: 18px;
+  }
+  .light {
+    height: 82px;
+    border-radius: 18px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    font-weight: 800;
+    font-size: 14px;
+  }
+  .green { background: #16a34a; }
+  .yellow { background: #ca8a04; }
+  .red { background: #dc2626; }
+  .gray { background: #4b5563; }
+
+  .decision {
+    font-size: 30px;
+    font-weight: 900;
+    text-align: center;
+    padding: 18px;
+    border-radius: 18px;
+    margin-bottom: 14px;
+  }
+  .go { background: #16a34a; }
+  .wait { background: #6b7280; }
+  .sell { background: #dc2626; }
+
+  .data {
+    background: #111827;
+    border-radius: 16px;
+    padding: 14px;
+    color: #d1d5db;
+    font-size: 16px;
+    line-height: 1.6;
+  }
+  .small {
+    font-size: 13px;
+    color: #9ca3af;
+    margin-top: 14px;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <h1>🚦 Light Board</h1>
+  <div class="sub">Enter ticker. Read blocks. Act only on GO.</div>
+
+  <input id="tickerInput" placeholder="Enter ticker" />
+  <button onclick="checkTicker()">CHECK</button>
+
+  <div class="ticker" id="tickerDisplay">—</div>
+
+  <div class="lights">
+    <div class="light gray" id="priceLight">PRICE</div>
+    <div class="light gray" id="volumeLight">VOLUME</div>
+    <div class="light gray" id="newsLight">NEWS</div>
+    <div class="light gray" id="marketLight">MARKET</div>
+  </div>
+
+  <div class="decision wait" id="decision">WAIT</div>
+
+  <div class="data" id="supportData">
+    Price vs Level: —<br>
+    5D Move: —<br>
+    Volume vs Avg: —<br>
+    Catalyst: —
+  </div>
+
+  <div class="small">
+    Beta prototype: lights are sample rule outputs. Connect live market/news data later.
+  </div>
+</div>
+
+<script>
+const sampleData = {
+  "ARRNF": {
+    lights: ["green","green","green","green"],
+    decision: "GO BUY",
+    price: "$0.27 vs $0.48 level (-44%)",
+    move: "+15% (1m)",
+    volume: "1.3× volume",
+    catalyst: "Halleck Creek rare-earth momentum"
+  },
+  "REEMF": {
+    lights: ["yellow","green","green","green"],
+    decision: "WAIT",
+    price: "$0.69 vs $0.62 level (+11%)",
+    move: "+3% (5d)",
+    volume: "1.1× volume",
+    catalyst: "Rare-earth development active"
+  },
+  "TMRC": {
+    lights: ["yellow","green","yellow","green"],
+    decision: "WAIT",
+    price: "$1.02 vs $0.95 level (+7%)",
+    move: "+6% (5d)",
+    volume: "1.2× volume",
+    catalyst: "USAR / Round Top theme active"
+  },
+  "ATALF": {
+    lights: ["red","yellow","yellow","green"],
+    decision: "WAIT",
+    price: "Catalyst-only trigger",
+    move: "+5% (5d)",
+    volume: "1.4× volume",
+    catalyst: "No confirmed funding/contract"
+  },
+  "ASTS": {
+    lights: ["yellow","green","green","green"],
+    decision: "HOLD / IMPROVING",
+    price: "Owned recovery position",
+    move: "+7% (5d)",
+    volume: "1.5× volume",
+    catalyst: "Space/carrier momentum improving"
+  }
+};
+
+function checkTicker() {
+  const ticker = document.getElementById("tickerInput").value.toUpperCase().trim();
+  const data = sampleData[ticker] || {
+    lights: ["gray","gray","gray","gray"],
+    decision: "WAIT",
+    price: "Ticker not in beta list",
+    move: "—",
+    volume: "—",
+    catalyst: "Needs live data connection"
+  };
+
+  document.getElementById("tickerDisplay").innerText = ticker || "—";
+
+  const ids = ["priceLight","volumeLight","newsLight","marketLight"];
+  const labels = ["PRICE","VOLUME","NEWS","MARKET"];
+  ids.forEach((id, i) => {
+    const el = document.getElementById(id);
+    el.className = "light " + data.lights[i];
+    el.innerHTML = labels[i] + "<br>" + lightEmoji(data.lights[i]);
+  });
+
+  const decision = document.getElementById("decision");
+  decision.innerText = data.decision;
+  decision.className = "decision " + decisionClass(data.decision);
+
+  document.getElementById("supportData").innerHTML =
+    "Price vs Level: " + data.price + "<br>" +
+    "5D Move: " + data.move + "<br>" +
+    "Volume vs Avg: " + data.volume + "<br>" +
+    "Catalyst: " + data.catalyst;
+}
+
+function lightEmoji(color) {
+  if (color === "green") return "🟢";
+  if (color === "yellow") return "🟡";
+  if (color === "red") return "🔴";
+  return "⚪";
+}
+
+function decisionClass(text) {
+  if (text.includes("GO")) return "go";
+  if (text.includes("SELL")) return "sell";
+  return "wait";
+}
+</script>
+</body>
+</html>
